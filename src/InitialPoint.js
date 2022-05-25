@@ -1,41 +1,38 @@
 import * as React from 'react';
 import {View, Text, Button} from 'react-native';
 import auth from '@react-native-firebase/auth';
+import {AuthContext} from './contexts/AuthContext';
 
 function InitialPoint({navigation}) {
-  const [initializing, setInitializing] = React.useState(true);
-  const [authUser, setAuthUser] = React.useState(null);
+  const {user, setUser} = React.useContext(AuthContext);
+  const [initializing, setInitializing] = React.useState();
+
+  function onAuthStateChanged(user) {
+    setUser(user);
+    if (initializing) {
+      setInitializing(false);
+    }
+  }
 
   React.useEffect(() => {
-    const unlisten = auth().onAuthStateChanged(user => {
-      if (user) {
-        setAuthUser(user);
-        if (initializing) {
-          setInitializing(false);
-        }
-      } else {
-        setAuthUser(null);
-        setInitializing(false);
-      }
-    });
-    return () => {
-      unlisten();
-    };
-  }, [initializing]);
+    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+    return subscriber;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (initializing) {
     return null;
   }
 
-  if (!authUser) {
-    console.log('Auth User', authUser);
+  if (!user) {
+    console.log('Auth User', user);
     navigation.navigate('Login');
     return null;
   }
 
   return (
     <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-      <Text>Welcome {authUser.email}</Text>
+      <Text>Welcome {user.email}</Text>
       <Button title="Sign out" onPress={() => auth().signOut()} />
     </View>
   );
